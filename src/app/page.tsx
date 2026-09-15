@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { GymHome } from "@/components/GymHome";
 
@@ -47,23 +48,29 @@ export default async function HomePage() {
 
   return (
     <main className="flex-1 w-full flex flex-col">
-      <GymHome
-        gym={{
-          name: resolved.name,
-          tagline: resolved.tagline,
-          city: resolved.city,
-          primaryColor: resolved.primaryColor,
-          slug: resolved.slug,
-        }}
-        machines={resolved.machines.map((m) => ({
-          id: m.id,
-          token: m.token,
-          nameEn: m.nameEn,
-          nameFr: m.nameFr,
-          category: m.category,
-          slug: m.slug,
-        }))}
-      />
+      <Suspense
+        fallback={
+          <div className="mx-auto max-w-xl px-4 py-8 text-slate-400 text-sm">Loading…</div>
+        }
+      >
+        <GymHome
+          gym={{
+            name: resolved.name,
+            tagline: resolved.tagline,
+            city: resolved.city,
+            primaryColor: resolved.primaryColor,
+            slug: resolved.slug,
+          }}
+          machines={resolved.machines.map((m) => ({
+            id: m.id,
+            token: m.token,
+            nameEn: m.nameEn,
+            nameFr: m.nameFr,
+            category: m.category,
+            slug: m.slug,
+          }))}
+        />
+      </Suspense>
     </main>
   );
 }

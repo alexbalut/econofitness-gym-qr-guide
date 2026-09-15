@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { QrScanner } from "@/components/QrScanner";
+import { WorkoutTracker } from "@/components/WorkoutTracker";
 
 type MachineRow = {
   id: string;
@@ -25,9 +26,35 @@ type Props = {
   machines: MachineRow[];
 };
 
+type Mode = "browse" | "workout" | "scan" | "code";
+
+function modeFromParam(raw: string | null): Mode | null {
+  if (raw === "workout" || raw === "scan" || raw === "code" || raw === "browse" || raw === "machines") {
+    return raw === "machines" ? "browse" : raw;
+  }
+  return null;
+}
+
 export function GymHome({ gym, machines }: Props) {
   const [lang, setLang] = useState<"en" | "fr">("en");
-  const [mode, setMode] = useState<"browse" | "scan" | "code">("browse");
+  const [mode, setMode] = useState<Mode>("browse");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const fromUrl = modeFromParam(searchParams.get("tab") ?? searchParams.get("mode"));
+    if (fromUrl) setMode(fromUrl);
+  }, [searchParams]);
+
+  function go(next: Mode) {
+    setMode(next);
+    if (next === "browse") {
+      router.replace("/", { scroll: false });
+      return;
+    }
+    const tab = next;
+    router.replace(`/?tab=${tab}`, { scroll: false });
+  }
 
   const t = useMemo(
     () =>
@@ -36,30 +63,39 @@ export function GymHome({ gym, machines }: Props) {
             welcome: "Bienvenue",
             brandTagline: "Super beaux gyms, très bas prix",
             subtitle: "Scannez un QR ou choisissez une machine pour voir le guide.",
-            scan: "Scanner une machine",
+            scan: "Scanner",
             enterCode: "Entrer un code",
             browse: "Machines",
+            workout: "Entraînement",
             back: "Retour",
             staff: "Espace staff",
             empty: "Aucune machine active pour le moment.",
+            scanFull: "Scanner une machine",
           }
         : {
             welcome: "Welcome",
             brandTagline: "Super nice gyms, very low prices",
             subtitle: "Scan a QR or pick a machine to open its how-to guide.",
-            scan: "Scan a machine",
+            scan: "Scan",
             enterCode: "Enter code",
             browse: "Machines",
+            workout: "Workout",
             back: "Back",
             staff: "Staff",
             empty: "No active machines yet.",
+            scanFull: "Scan a machine",
           },
     [lang]
   );
 
+  const tabClass = (active: boolean) =>
+    `flex-1 min-h-[48px] px-2 py-2.5 text-sm sm:text-base font-bold rounded-xl transition ${
+      active ? "bg-[#EEAF00] text-black" : "bg-[#353535] text-neutral-300 hover:text-white"
+    }`;
+
   return (
     <div className="mx-auto max-w-xl px-4 py-8 w-full flex-1">
-      <header className="mb-8">
+      <header className="mb-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <span
@@ -98,24 +134,31 @@ export function GymHome({ gym, machines }: Props) {
             </button>
           </div>
         </div>
-        <p className="mt-4 text-slate-300">{t.subtitle}</p>
+        {(mode === "browse" || mode === "workout") && (
+          <p className="mt-4 text-slate-300">{t.subtitle}</p>
+        )}
       </header>
+
+      <nav className="grid grid-cols-3 gap-2 mb-6" aria-label="Member navigation">
+        <button type="button" onClick={() => go("browse")} className={tabClass(mode === "browse")}>
+          {t.browse}
+        </button>
+        <button
+          type="button"
+          onClick={() => go("workout")}
+          className={tabClass(mode === "workout")}
+        >
+          {t.workout}
+        </button>
+        <button type="button" onClick={() => go("scan")} className={tabClass(mode === "scan")}>
+          {t.scan}
+        </button>
+      </nav>
 
       {mode === "browse" && (
         <>
-          <div className="grid grid-cols-2 gap-3 mb-8">
-            <button
-              type="button"
-              onClick={() => setMode("scan")}
-              className="btn btn-primary !py-3"
-              style={{
-                background: gym.primaryColor || "#EEAF00",
-                color: "#000000",
-              }}
-            >
-              {t.scan}
-            </button>
-            <button type="button" onClick={() => setMode("code")} className="btn btn-secondary !py-3">
+          <div className="grid grid-cols-1 gap-3 mb-8">
+            <button type="button" onClick={() => go("code")} className="btn btn-secondary !py-3">
               {t.enterCode}
             </button>
           </div>
@@ -153,17 +196,32 @@ export function GymHome({ gym, machines }: Props) {
         </>
       )}
 
+      {mode === "workout" && (
+        <WorkoutTracker
+          gymSlug={gym.slug}
+          gymColor={gym.primaryColor}
+          lang={lang}
+          machines={machines.map((m) => ({
+            id: m.id,
+            token: m.token,
+            nameEn: m.nameEn,
+            nameFr: m.nameFr,
+            category: m.category,
+          }))}
+        />
+      )}
+
       {mode === "scan" && (
         <section>
+          <h2 className="text-xl font-semibold mb-4">{t.scanFull}</h2>
+          <QrScanner />
           <button
             type="button"
-            onClick={() => setMode("browse")}
-            className="text-sm text-slate-400 hover:text-yellow-300 mb-4"
+            onClick={() => go("code")}
+            className="mt-4 text-sm text-slate-400 hover:text-yellow-300 w-full text-center"
           >
-            ← {t.back}
+            {t.enterCode}
           </button>
-          <h2 className="text-xl font-semibold mb-4">{t.scan}</h2>
-          <QrScanner />
         </section>
       )}
 
@@ -171,7 +229,7 @@ export function GymHome({ gym, machines }: Props) {
         <section>
           <button
             type="button"
-            onClick={() => setMode("browse")}
+            onClick={() => go("browse")}
             className="text-sm text-slate-400 hover:text-yellow-300 mb-4"
           >
             ← {t.back}

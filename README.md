@@ -13,6 +13,7 @@ Seeded demo gym: **Éconofitness Montréal — Salaberry**.
 - `qrcode` for QR generation
 - `html5-qrcode` camera scan + manual token/URL fallback
 - Cookie JWT auth (`jose` + `bcryptjs`)
+- Member **Workout** tracker (client-side `localStorage`, keyed by gym slug — no login)
 
 ## Quick start
 
@@ -37,7 +38,7 @@ Production build check:
 npm run build && npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — you land **inside the member gym home** for Éconofitness Montréal — Salaberry (scan / enter code / browse machines). No marketing / SaaS pitch landing page.
+Open [http://localhost:3000](http://localhost:3000) — you land **inside the member gym home** for Éconofitness Montréal — Salaberry (Machines / Workout / Scan). No marketing / SaaS pitch landing page.
 
 ### Environment
 
@@ -73,7 +74,8 @@ Seed creates **10 bilingual machines** (Lat Pulldown, Seated Row, Leg Press, Che
 
 | Route | Who | Description |
 |-------|-----|-------------|
-| `/` | Members | **Gym member home** — branding, scan / enter code, browsable machine list |
+| `/` | Members | **Gym member home** — tabs: Machines · Workout · Scan (+ enter code) |
+| `/?tab=workout` | Members | Log sets/reps (strength) or duration (cardio); persists in localStorage |
 | `/scan` | Members | Dedicated camera QR scan + manual entry |
 | `/q/[token]` | Members | Machine guide (opaque QR target) |
 | `/m/[gymSlug]/[machineSlug]` | Members | Friendly slug URL (e.g. `/m/econofitness-montreal/lat-pulldown`) |
@@ -90,10 +92,19 @@ Seed creates **10 bilingual machines** (Lat Pulldown, Seated Row, Leg Press, Che
 - `POST /api/machines` · `PUT/DELETE /api/machines/[id]`
 - `GET /api/machines/[id]/qr` · issues CRUD
 
+## Workout tracker (members)
+
+On the home tabs, **Workout** lets members log a session from the same active machines as the QR list:
+
+- **Strength** (`category !== "Cardio"`): multiple sets with required reps + optional weight (kg).
+- **Cardio** (e.g. treadmill): minutes + seconds, optional distance (km).
+- In-progress workout survives refresh via `localStorage` key `econofitness-workout:v1:<gymSlug>`.
+- Machine guides also offer **Add to workout**.
+
 ## Pitch walkthrough
 
 1. Open `/` — member is “at” Éconofitness Montréal — Salaberry.
-2. Browse a machine or use Scan / Enter code.
+2. Browse a machine, open **Workout** to log sets, or use Scan / Enter code.
 3. Staff → `/admin/login` with demo credentials.
 4. Admin: edit machines, download QR PNGs, print floor sheet, triage issues.
 
