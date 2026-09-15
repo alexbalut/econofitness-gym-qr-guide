@@ -23,6 +23,7 @@ type Props = {
   gymSlug: string;
   token: string;
   machineId: string;
+  machineSlug?: string;
   nameEn: string;
   nameFr: string;
   category: string;
@@ -37,6 +38,7 @@ export function MachineGuide({
   gymSlug,
   token,
   machineId,
+  machineSlug,
   nameEn,
   nameFr,
   category,
@@ -113,6 +115,7 @@ export function MachineGuide({
       nameEn,
       nameFr,
       category,
+      slug: machineSlug,
     });
     setAdded(true);
   }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { QrScanner } from "@/components/QrScanner";
 import { WorkoutTracker } from "@/components/WorkoutTracker";
+import { ProgressDashboard } from "@/components/ProgressDashboard";
 
 type MachineRow = {
   id: string;
@@ -26,10 +27,17 @@ type Props = {
   machines: MachineRow[];
 };
 
-type Mode = "browse" | "workout" | "scan" | "code";
+type Mode = "browse" | "workout" | "progress" | "scan" | "code";
 
 function modeFromParam(raw: string | null): Mode | null {
-  if (raw === "workout" || raw === "scan" || raw === "code" || raw === "browse" || raw === "machines") {
+  if (
+    raw === "workout" ||
+    raw === "progress" ||
+    raw === "scan" ||
+    raw === "code" ||
+    raw === "browse" ||
+    raw === "machines"
+  ) {
     return raw === "machines" ? "browse" : raw;
   }
   return null;
@@ -67,6 +75,7 @@ export function GymHome({ gym, machines }: Props) {
             enterCode: "Entrer un code",
             browse: "Machines",
             workout: "Entraînement",
+            progress: "Progrès",
             back: "Retour",
             staff: "Espace staff",
             empty: "Aucune machine active pour le moment.",
@@ -80,6 +89,7 @@ export function GymHome({ gym, machines }: Props) {
             enterCode: "Enter code",
             browse: "Machines",
             workout: "Workout",
+            progress: "Progress",
             back: "Back",
             staff: "Staff",
             empty: "No active machines yet.",
@@ -134,12 +144,12 @@ export function GymHome({ gym, machines }: Props) {
             </button>
           </div>
         </div>
-        {(mode === "browse" || mode === "workout") && (
+        {(mode === "browse" || mode === "workout" || mode === "progress") && (
           <p className="mt-4 text-slate-300">{t.subtitle}</p>
         )}
       </header>
 
-      <nav className="grid grid-cols-3 gap-2 mb-6" aria-label="Member navigation">
+      <nav className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6" aria-label="Member navigation">
         <button type="button" onClick={() => go("browse")} className={tabClass(mode === "browse")}>
           {t.browse}
         </button>
@@ -149,6 +159,13 @@ export function GymHome({ gym, machines }: Props) {
           className={tabClass(mode === "workout")}
         >
           {t.workout}
+        </button>
+        <button
+          type="button"
+          onClick={() => go("progress")}
+          className={tabClass(mode === "progress")}
+        >
+          {t.progress}
         </button>
         <button type="button" onClick={() => go("scan")} className={tabClass(mode === "scan")}>
           {t.scan}
@@ -201,14 +218,20 @@ export function GymHome({ gym, machines }: Props) {
           gymSlug={gym.slug}
           gymColor={gym.primaryColor}
           lang={lang}
+          onSaved={() => go("progress")}
           machines={machines.map((m) => ({
             id: m.id,
             token: m.token,
             nameEn: m.nameEn,
             nameFr: m.nameFr,
             category: m.category,
+            slug: m.slug,
           }))}
         />
+      )}
+
+      {mode === "progress" && (
+        <ProgressDashboard gymSlug={gym.slug} gymColor={gym.primaryColor} lang={lang} />
       )}
 
       {mode === "scan" && (

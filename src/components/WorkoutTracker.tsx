@@ -9,6 +9,7 @@ import {
   isCardio,
   loadWorkout,
   newId,
+  saveSessionToHistory,
   saveWorkout,
   type AddableMachine,
   type StrengthSet,
@@ -23,9 +24,11 @@ type Props = {
   gymColor: string;
   machines: AddableMachine[];
   lang: Lang;
+  /** Called after a workout is saved to history (e.g. switch to Progress tab). */
+  onSaved?: () => void;
 };
 
-export function WorkoutTracker({ gymSlug, gymColor, machines, lang }: Props) {
+export function WorkoutTracker({ gymSlug, gymColor, machines, lang, onSaved }: Props) {
   const [session, setSession] = useState<WorkoutSession | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -54,9 +57,12 @@ export function WorkoutTracker({ gymSlug, gymColor, machines, lang }: Props) {
             removeExercise: "Retirer l'exercice",
             finish: "Terminer",
             clear: "Effacer",
-            finishConfirm: "Terminer et effacer cet entraînement ?",
+            save: "Sauvegarder",
+            saveConfirm: "Sauvegarder cet entraînement dans votre historique ?",
+            finishConfirm: "Terminer et effacer cet entraînement sans le sauvegarder ?",
             clearConfirm: "Effacer l'entraînement en cours ?",
             done: "Entraînement terminé. Bravo!",
+            saved: "Entraînement sauvegardé!",
             inWorkout: "Déjà dans l'entraînement",
             guide: "Guide",
             noMachines: "Aucune machine active.",
@@ -84,9 +90,12 @@ export function WorkoutTracker({ gymSlug, gymColor, machines, lang }: Props) {
             removeExercise: "Remove exercise",
             finish: "Finish",
             clear: "Clear",
-            finishConfirm: "Finish and clear this workout?",
+            save: "Save",
+            saveConfirm: "Save this workout to your history?",
+            finishConfirm: "Finish and clear this workout without saving?",
             clearConfirm: "Clear the in-progress workout?",
             done: "Workout finished. Nice work!",
+            saved: "Workout saved!",
             inWorkout: "Already in workout",
             guide: "Guide",
             noMachines: "No active machines.",
@@ -175,6 +184,18 @@ export function WorkoutTracker({ gymSlug, gymColor, machines, lang }: Props) {
     if (kind === "finish") showFlash(t.done);
   }
 
+  function saveToHistory() {
+    if (!session || session.exercises.length === 0) return;
+    const ok = window.confirm(t.saveConfirm);
+    if (!ok) return;
+    const saved = saveSessionToHistory(session);
+    if (!saved) return;
+    clearWorkout(gymSlug);
+    setSession(emptyWorkout(gymSlug));
+    showFlash(t.saved);
+    window.setTimeout(() => onSaved?.(), 600);
+  }
+
   const inWorkoutIds = useMemo(
     () => new Set(session?.exercises.map((e) => e.machineId) ?? []),
     [session]
@@ -193,7 +214,7 @@ export function WorkoutTracker({ gymSlug, gymColor, machines, lang }: Props) {
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-semibold text-slate-200 text-lg">{t.title}</h2>
         {session.exercises.length > 0 && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
             <button
               type="button"
               onClick={() => finishOrClear("clear")}
@@ -204,10 +225,17 @@ export function WorkoutTracker({ gymSlug, gymColor, machines, lang }: Props) {
             <button
               type="button"
               onClick={() => finishOrClear("finish")}
+              className="btn btn-secondary !py-2 !px-3 text-sm"
+            >
+              {t.finish}
+            </button>
+            <button
+              type="button"
+              onClick={saveToHistory}
               className="btn btn-primary !py-2 !px-3 text-sm"
               style={{ background: gymColor || "#EEAF00", color: "#000" }}
             >
-              {t.finish}
+              {t.save}
             </button>
           </div>
         )}

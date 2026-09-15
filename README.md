@@ -38,7 +38,7 @@ Production build check:
 npm run build && npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — you land **inside the member gym home** for Éconofitness Montréal — Salaberry (Machines / Workout / Scan). No marketing / SaaS pitch landing page.
+Open [http://localhost:3000](http://localhost:3000) — you land **inside the member gym home** for Éconofitness Montréal — Salaberry (Machines / Workout / Progress / Scan). No marketing / SaaS pitch landing page.
 
 ### Environment
 
@@ -74,8 +74,9 @@ Seed creates **10 bilingual machines** (Lat Pulldown, Seated Row, Leg Press, Che
 
 | Route | Who | Description |
 |-------|-----|-------------|
-| `/` | Members | **Gym member home** — tabs: Machines · Workout · Scan (+ enter code) |
-| `/?tab=workout` | Members | Log sets/reps (strength) or duration (cardio); persists in localStorage |
+| `/` | Members | **Gym member home** — tabs: Machines · Workout · Progress · Scan (+ enter code) |
+| `/?tab=workout` | Members | Log sets/reps (strength) or duration (cardio); in-progress persists in localStorage |
+| `/?tab=progress` | Members | Per-machine progress from **saved** workouts (localStorage history) |
 | `/scan` | Members | Dedicated camera QR scan + manual entry |
 | `/q/[token]` | Members | Machine guide (opaque QR target) |
 | `/m/[gymSlug]/[machineSlug]` | Members | Friendly slug URL (e.g. `/m/econofitness-montreal/lat-pulldown`) |
@@ -92,19 +93,21 @@ Seed creates **10 bilingual machines** (Lat Pulldown, Seated Row, Leg Press, Che
 - `POST /api/machines` · `PUT/DELETE /api/machines/[id]`
 - `GET /api/machines/[id]/qr` · issues CRUD
 
-## Workout tracker (members)
+## Workout tracker & progress (members)
 
 On the home tabs, **Workout** lets members log a session from the same active machines as the QR list:
 
 - **Strength** (`category !== "Cardio"`): multiple sets with required reps + optional weight (kg).
 - **Cardio** (e.g. treadmill): minutes + seconds, optional distance (km).
 - In-progress workout survives refresh via `localStorage` key `econofitness-workout:v1:<gymSlug>`.
+- **Save** stores a completed workout (timestamp + exercises) in history key `econofitness-workout-history:v1:<gymSlug>`, then opens **Progress**. Finish/Clear still discard the in-progress session without saving.
+- **Progress** dashboard: per machine used at least once — times used, last used, strength volume hints (last sets, heaviest weight, total sets) or cardio durations (last / best / total), plus a short recent history. Empty state when nothing is saved yet. No member login (demo localStorage only).
 - Machine guides also offer **Add to workout**.
 
 ## Pitch walkthrough
 
 1. Open `/` — member is “at” Éconofitness Montréal — Salaberry.
-2. Browse a machine, open **Workout** to log sets, or use Scan / Enter code.
+2. Browse a machine, open **Workout** to log sets, **Save** when done, check **Progress**, or use Scan / Enter code.
 3. Staff → `/admin/login` with demo credentials.
 4. Admin: edit machines, download QR PNGs, print floor sheet, triage issues.
 
